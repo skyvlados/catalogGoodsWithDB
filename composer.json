@@ -1,0 +1,23 @@
+{
+  "require": {
+    "php": "8.0.*",
+    "amphp/postgres": "^1.4"
+  },
+
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Connections\\": "Connections/",
+      "Models\\": "Models/",
+      "Repositories\\": "Repositories/",
+      "Cookies\\": "Cookies/"
+
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
