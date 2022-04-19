@@ -16,15 +16,28 @@ class Countries extends AbstractRepository
         return $data->fetchAll(PDO::FETCH_CLASS,Country::class);
     }
 
+    public function getWithLimit(string $perPage,string $page):array
+    {
+        $data=$this->connection->prepare('SELECT * from countries ORDER BY id LIMIT ? OFFSET ?');
+        $data->execute([$perPage,($page-1)*$perPage]);
+        return $data->fetchAll(PDO::FETCH_CLASS,Country::class);
+    }
+
+    public function getCount():int
+    {
+        $sth=$this->connection->query('SELECT * from countries');
+        return $sth->rowCount();
+    }
+
     public function create(string $name):void
     {
         $sth=$this->connection->prepare('INSERT INTO countries (name) VALUES (?)');
         $sth->execute([$name]);
     }
 
-    public function render():void
+    public function render(string $perPage,string $page):void
     {
-        $countries=$this->getAll();
+        $countries=$this->getWithLimit($perPage, $page);
         ?>
         <table style="border: 1px solid black">
             <tr>

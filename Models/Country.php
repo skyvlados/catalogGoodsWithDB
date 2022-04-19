@@ -7,9 +7,9 @@ class Country
     public string $id;
     public ?string $name=null;
 
-    public function getId(): string
+    public function getId(): int
     {
-        return $this->id;
+        return (int)$this->id;
     }
 
     public function getName(): ?string

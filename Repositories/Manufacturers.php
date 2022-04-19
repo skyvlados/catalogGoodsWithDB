@@ -14,6 +14,20 @@ class Manufacturers extends AbstractRepository
         return $data->fetchObject(Manufacturer::class);
     }
 
+    public function getWithLimit(int $perPage, int $page):array
+    {
+        $data=$this->connection->prepare('SELECT * from manufacturers ORDER BY id LIMIT ? OFFSET ?');
+        $data->execute([$perPage,(($page-1)*$perPage)]);
+        return $data->fetchAll(PDO::FETCH_CLASS,Manufacturer::class);
+    }
+
+    public function getCount():int
+    {
+
+        $data=$this->connection->query('SELECT * from manufacturers');
+        return $data->rowCount();
+    }
+
     public function getIdByName(string $name): int
     {
         $data=$this->connection->prepare('SELECT * from manufacturers WHERE name=?');
@@ -36,9 +50,9 @@ class Manufacturers extends AbstractRepository
         $sth->execute([$name, $country_id]);
     }
 
-    public function render():void
+    public function render(int $perPage,int $page):void
     {
-        $manufacturers=$this->getAll();
+        $manufacturers=$this->getWithLimit($perPage, $page);
         ?>
         <table style="border: 1px solid black">
             <tr>
