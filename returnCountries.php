@@ -4,6 +4,7 @@ use Repositories\Countries;
 use Repositories\Repository;
 $perPage=(int)($_GET['perPage']??10);
 $page=(int)($_GET['page']??1);
+$name=$_GET['name']??'';
 $from=5;
 $to=25;
 $step=5;
@@ -25,9 +26,14 @@ $countries=new Countries();
     <option value="<?=$i?>" <?=($i===$perPage) ? 'selected' : ''?>><?=$i?></option>
     <?php }?>
     </select>
+    <br>
+    <label for="filters">Фильтр: </label>
+    <br>
+    <label for="nameCountry">Название страны: </label>
+    <input type="text" name="name" value="<?=$_GET['name']??''?>">
     <input type="submit" value="Показать список">
 <?php
-Repository::get(Countries::class)->render($perPage,$page);?>
+Repository::get(Countries::class)->render($perPage,$page,$name);?>
 <br>
 <label for="pages">Страницы:</label>
 <?php

@@ -14,10 +14,42 @@ class Manufacturers extends AbstractRepository
         return $data->fetchObject(Manufacturer::class);
     }
 
-    public function getWithLimit(int $perPage, int $page):array
+    public function getIdsByCountryId(int $countryId):array
     {
-        $data=$this->connection->prepare('SELECT * from manufacturers ORDER BY id LIMIT ? OFFSET ?');
-        $data->execute([$perPage,(($page-1)*$perPage)]);
+        $ids=[];
+        $data=$this->connection->prepare('SELECT * from manufacturers WHERE country_id=?');
+        $data->execute([$countryId]);
+        for ($i=0;$i<$data->rowCount();$i++) {
+            $ids = array(
+                $i => $data->fetchObject(Manufacturer::class)->getId(),
+            );
+        }
+        return $ids;
+    }
+
+    public function getWithLimit(int $perPage, int $page, string $name, string $country):array
+    {
+        /**
+         * where name like $name
+         * where country like $country
+         */
+        $where = [];
+        $params=[];
+        if ($name) {
+            $where[] = 'manufacturers.name like ?';
+            $params[] = "%$name";
+        }
+        if ($country) {
+            $where[] = 'countries.name like ?';
+            $params[] = "%$country";
+        }
+        $data=$this->connection->prepare(sprintf(
+                'SELECT manufacturers.*
+from manufacturers
+    INNER JOIN countries on manufacturers.country_id=countries.id
+    %s ORDER BY id LIMIT ? OFFSET ?',
+                count($where)>0 ? 'where '.implode(' AND ', $where) : ''));
+        $data->execute(array_merge($params,[$perPage,(($page-1)*$perPage)]));
         return $data->fetchAll(PDO::FETCH_CLASS,Manufacturer::class);
     }
 
@@ -50,9 +82,9 @@ class Manufacturers extends AbstractRepository
         $sth->execute([$name, $country_id]);
     }
 
-    public function render(int $perPage,int $page):void
+    public function render(int $perPage,int $page,string $name, string $country):void
     {
-        $manufacturers=$this->getWithLimit($perPage, $page);
+        $manufacturers=$this->getWithLimit($perPage, $page, $name, $country);
         ?>
         <table style="border: 1px solid black">
             <tr>

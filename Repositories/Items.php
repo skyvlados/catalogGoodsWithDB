@@ -21,23 +21,46 @@ class Items extends AbstractRepository
         return (int)$data->fetchColumn();
     }
 
-    public function getWithLimit(int $perPage, int $page, string $name, int $priceFrom, int $priceTo):array
+    public function getWithLimit(int $perPage, int $page, ?string $name, ?int $priceFrom, ?int $priceTo,
+                                 ?string $country):array
     {
-        $data=$this->connection->prepare('SELECT * from items WHERE (name LIKE ?)
-AND (price BETWEEN ? AND ?) ORDER BY id LIMIT ? OFFSET ?');
-        if ($priceTo === 0) {
-            $priceTo=1000000000;
+        $params = [];
+        $where = [];
+        /**
+         * where (name like ?)
+         * where (name like ?) and (price > ?)
+         * where name like ? and price BETWEEN ? and ?
+         * where name like ? and price < ? and countries.name = ?
+         * where price > ?
+         */
+        if ($name) {
+            $where[]='items.name like ?';
+            $params[]="%$name%";
         }
-        $data->execute(['%'.$name.'%', $priceFrom, $priceTo,$perPage, (($page-1)*$perPage)]);
+        if ($priceFrom) {
+            $where[]='price >= ?';
+            $params[]=$priceFrom;
+        }
+        if ($priceTo) {
+            $where[]='price <= ?';
+            $params[]=$priceTo;
+        }
+        if ($country) {
+            $where[]='countries.name = ?';
+            $params[]=$country;
+        }
+        $data=$this->connection->prepare(sprintf(
+                'SELECT items.*
+FROM items
+INNER JOIN manufacturers ON items.manufacturer_id=manufacturers.id
+INNER JOIN countries ON manufacturers.country_id=countries.id
+    %s --WHERE
+ORDER BY id LIMIT ? OFFSET ?',
+            count($where)>0 ? 'where '.implode(' AND ',$where) : ''
+        ));
+        $data->execute(array_merge($params,[$perPage, (($page-1)*$perPage)]));
         return $data->fetchAll(PDO::FETCH_CLASS,Item::class);
     }
-
-//    public function getByName(string $name):array
-//    {
-//        $data=$this->connection->prepare('SELECT * from items WHERE name LIKE ?');
-//        $data->execute(['%'.$name.'%']);
-//        return $data->fetchAll(PDO::FETCH_CLASS,Item::class);
-//    }
 
     public function create(string $name, int $price, int $manufacturer_id, string $made_at):void
     {
@@ -45,9 +68,9 @@ AND (price BETWEEN ? AND ?) ORDER BY id LIMIT ? OFFSET ?');
         $sth->execute([$name, $price, $manufacturer_id, $made_at]);
     }
 
-    public function render(int $perPage,int $page, string $name, int $priceFrom, int $priceTo):void
+    public function render(int $perPage,int $page, ?string $name, ?int $priceFrom, ?int $priceTo, ?string $country):void
     {
-        $items=$this->getWithLimit($perPage, $page, $name, $priceFrom, $priceTo);
+        $items=$this->getWithLimit($perPage, $page, $name, $priceFrom, $priceTo, $country);
 
         ?>
         <table style="border: 1px solid black">

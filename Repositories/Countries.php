@@ -16,10 +16,19 @@ class Countries extends AbstractRepository
         return $data->fetchAll(PDO::FETCH_CLASS,Country::class);
     }
 
-    public function getWithLimit(string $perPage,string $page):array
+    public function getWithLimit(string $perPage,string $page,string $name):array
     {
-        $data=$this->connection->prepare('SELECT * from countries ORDER BY id LIMIT ? OFFSET ?');
-        $data->execute([$perPage,($page-1)*$perPage]);
+        $where='';
+        $params='';
+        if ($name) {
+            $where='name LIKE ?';
+            $params="%$name%";
+        }
+        $data=$this->connection->prepare(sprintf(
+                'SELECT * from countries %s ORDER BY id LIMIT ? OFFSET ?',
+            $name ? 'where '.$where : ''
+        ));
+        $data->execute($name ? [$params ,$perPage,($page-1)*$perPage] : [$perPage,($page-1)*$perPage]);
         return $data->fetchAll(PDO::FETCH_CLASS,Country::class);
     }
 
@@ -35,9 +44,9 @@ class Countries extends AbstractRepository
         $sth->execute([$name]);
     }
 
-    public function render(string $perPage,string $page):void
+    public function render(string $perPage,string $page, string $name):void
     {
-        $countries=$this->getWithLimit($perPage, $page);
+        $countries=$this->getWithLimit($perPage, $page, $name);
         ?>
         <table style="border: 1px solid black">
             <tr>
@@ -65,6 +74,9 @@ class Countries extends AbstractRepository
     {
         $data=$this->connection->prepare('SELECT * from countries WHERE name=?');
         $data->execute([$name]);
+        if (strcasecmp($name, '')===0) {
+            return 0;
+        }
         return $data->fetchObject(Country::class)->getId();
     }
 
