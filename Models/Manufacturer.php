@@ -11,9 +11,9 @@ class Manufacturer
     public ?string $name=null;
     public string $country_id;
 
-    public function getId(): string
+    public function getId(): int
     {
-        return $this->id;
+        return (int)$this->id;
     }
 
     public function getName(): ?string
@@ -21,9 +21,9 @@ class Manufacturer
         return $this->name;
     }
 
-    public function getCountryId(): string
+    public function getCountryId(): int
     {
-        return $this->country_id;
+        return (int)$this->country_id;
     }
 
 
